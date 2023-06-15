@@ -34,7 +34,7 @@ func NewErrInvalidValue(fieldName string) error {
 }
 
 func NewErrInvalidMinValue(fieldName string, val int) error {
-	message := fmt.Sprintf("%s `%s`. Its should be bigger than %d", getErrorMessage(ErrInvalidFieldValue), fieldName, val)
+	message := fmt.Sprintf("%s `%s`. Its should be less than %d", getErrorMessage(ErrInvalidFieldValue), fieldName, val)
 	return AppError{
 		Code:     ErrInvalidFieldValue,
 		Message:  NewErrorMessage(message),
@@ -43,7 +43,7 @@ func NewErrInvalidMinValue(fieldName string, val int) error {
 }
 
 func NewErrInvalidMaxValue(fieldName string, val int) error {
-	message := fmt.Sprintf("%s `%s`. Its should be less than %d", getErrorMessage(ErrInvalidFieldValue), fieldName, val)
+	message := fmt.Sprintf("%s `%s`. Its should be bigger than %d", getErrorMessage(ErrInvalidFieldValue), fieldName, val)
 	return AppError{
 		Code:     ErrInvalidFieldValue,
 		Message:  NewErrorMessage(message),
@@ -61,9 +61,9 @@ func NewErrInvalidType(fieldName string) error {
 }
 
 func NewErrNotMatched(fieldName string, fieldName2 string) error {
-	message := fmt.Sprintf("%s `%s` are not match", fieldName, fieldName2)
+	message := fmt.Sprintf("`%s` and `%s` are not match", fieldName, fieldName2)
 	return AppError{
-		Code:     ErrInvalidFieldType,
+		Code:     ErrNotMatched,
 		Message:  NewErrorMessage(message),
 		HttpCode: http.StatusBadRequest,
 	}
@@ -72,7 +72,7 @@ func NewErrNotMatched(fieldName string, fieldName2 string) error {
 func NewErrSuspended(fieldName string) error {
 	message := fmt.Sprintf("`%s` is suspended.", fieldName)
 	return AppError{
-		Code:     ErrInvalidFieldType,
+		Code:     ErrSuspended,
 		Message:  NewErrorMessage(message),
 		HttpCode: http.StatusBadRequest,
 	}
@@ -83,7 +83,7 @@ func NewErrRecordNotfound(fieldName string) error {
 	return AppError{
 		Code:     ErrRecordNotFound,
 		Message:  NewErrorMessage(message),
-		HttpCode: http.StatusBadRequest,
+		HttpCode: http.StatusNotFound,
 	}
 }
 

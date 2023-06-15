@@ -15,8 +15,10 @@ const (
 	ErrInvalidFieldValue ErrorCode = "V4002"
 	ErrPermissionDenied  ErrorCode = "V4003"
 	ErrRecordNotFound    ErrorCode = "V4004"
-	ErrInvalidFieldType  ErrorCode = "V4001"
+	ErrInvalidFieldType  ErrorCode = "V4005"
 	ErrDuplicatedRecord  ErrorCode = "V4009"
+	ErrNotMatched        ErrorCode = "V4010"
+	ErrSuspended         ErrorCode = "V5001"
 	ErrorInternalError   ErrorCode = "S5003"
 )
 
@@ -27,8 +29,11 @@ var (
 		ErrUnauthorized:      "unauthorized",
 		ErrPermissionDenied:  "permission denied",
 		ErrInvalidFieldValue: "invalid value filed",
+		ErrInvalidFieldType:  "invalid type filed",
 		ErrDuplicatedRecord:  "duplicated value field",
 		ErrRecordNotFound:    "not found",
+		ErrSuspended:         "suspend",
+		ErrNotMatched:        "not matched",
 	}
 )
 
@@ -40,14 +45,20 @@ func getErrorMessage(code ErrorCode) ErrorMessage {
 		return messages[ErrRequiredField]
 	case ErrUnauthorized:
 		return messages[ErrUnauthorized]
+	case ErrInvalidFieldType:
+		return messages[ErrInvalidFieldType]
 	case ErrPermissionDenied:
 		return messages[ErrPermissionDenied]
 	case ErrInvalidFieldValue:
 		return messages[ErrInvalidFieldValue]
 	case ErrDuplicatedRecord:
 		return messages[ErrDuplicatedRecord]
+	case ErrSuspended:
+		return messages[ErrSuspended]
 	case ErrRecordNotFound:
 		return messages[ErrRecordNotFound]
+	case ErrNotMatched:
+		return messages[ErrNotMatched]
 	default:
 		return messages[ErrorInternalError]
 	}
