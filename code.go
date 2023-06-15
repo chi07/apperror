@@ -13,11 +13,9 @@ const (
 	ErrRequiredField     ErrorCode = "V4003"
 	ErrInvalidFieldType  ErrorCode = "V4001"
 	ErrInvalidFieldValue ErrorCode = "V4002"
-
-	ErrDuplicatedRecord ErrorCode = "V4009"
-	ErrRecordNotFound   ErrorCode = "V4000"
-
-	ErrorInternalError ErrorCode = "S5003"
+	ErrDuplicatedRecord  ErrorCode = "V4009"
+	ErrRecordNotFound    ErrorCode = "V4000"
+	ErrorInternalError   ErrorCode = "S5003"
 )
 
 var (
