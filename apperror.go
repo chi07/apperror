@@ -15,8 +15,8 @@ func (e AppError) Error() string {
 	return string(e.Message)
 }
 
-func NewMissingField(fieldName string) error {
-	message := fmt.Sprintf("%s `%s`", messages[ErrRequiredField], fieldName)
+func NewErrMissingField(fieldName string) error {
+	message := fmt.Sprintf("%s `%s`", getErrorMessage(ErrRequiredField), fieldName)
 	return AppError{
 		Code:     ErrRequiredField,
 		Message:  NewErrorMessage(message),
@@ -24,8 +24,8 @@ func NewMissingField(fieldName string) error {
 	}
 }
 
-func NewInvalidValue(fieldName string) error {
-	message := fmt.Sprintf("%s `%s`", messages[ErrInvalidFieldValue], fieldName)
+func NewErrInvalidValue(fieldName string) error {
+	message := fmt.Sprintf("%s `%s`", getErrorMessage(ErrInvalidFieldValue), fieldName)
 	return AppError{
 		Code:     ErrInvalidFieldValue,
 		Message:  NewErrorMessage(message),
@@ -33,8 +33,8 @@ func NewInvalidValue(fieldName string) error {
 	}
 }
 
-func NewInvalidMinValue(fieldName string, val int) error {
-	message := fmt.Sprintf("%s `%s`. Its should be bigger than %d", messages[ErrInvalidFieldValue], fieldName, val)
+func NewErrInvalidMinValue(fieldName string, val int) error {
+	message := fmt.Sprintf("%s `%s`. Its should be bigger than %d", getErrorMessage(ErrInvalidFieldValue), fieldName, val)
 	return AppError{
 		Code:     ErrInvalidFieldValue,
 		Message:  NewErrorMessage(message),
@@ -42,8 +42,8 @@ func NewInvalidMinValue(fieldName string, val int) error {
 	}
 }
 
-func NewInvalidMaxValue(fieldName string, val int) error {
-	message := fmt.Sprintf("%s `%s`. Its should be less than %d", messages[ErrInvalidFieldValue], fieldName, val)
+func NewErrInvalidMaxValue(fieldName string, val int) error {
+	message := fmt.Sprintf("%s `%s`. Its should be less than %d", getErrorMessage(ErrInvalidFieldValue), fieldName, val)
 	return AppError{
 		Code:     ErrInvalidFieldValue,
 		Message:  NewErrorMessage(message),
@@ -51,8 +51,8 @@ func NewInvalidMaxValue(fieldName string, val int) error {
 	}
 }
 
-func NewInvalidType(fieldName string) error {
-	message := fmt.Sprintf("%s `%s`", messages[ErrInvalidFieldType], fieldName)
+func NewErrInvalidType(fieldName string) error {
+	message := fmt.Sprintf("%s `%s`", getErrorMessage(ErrInvalidFieldType), fieldName)
 	return AppError{
 		Code:     ErrInvalidFieldType,
 		Message:  NewErrorMessage(message),
@@ -60,7 +60,7 @@ func NewInvalidType(fieldName string) error {
 	}
 }
 
-func NewNotMatched(fieldName string, fieldName2 string) error {
+func NewErrNotMatched(fieldName string, fieldName2 string) error {
 	message := fmt.Sprintf("%s `%s` are not match", fieldName, fieldName2)
 	return AppError{
 		Code:     ErrInvalidFieldType,
@@ -69,7 +69,7 @@ func NewNotMatched(fieldName string, fieldName2 string) error {
 	}
 }
 
-func NewSuspended(fieldName string) error {
+func NewErrSuspended(fieldName string) error {
 	message := fmt.Sprintf("`%s` is suspended.", fieldName)
 	return AppError{
 		Code:     ErrInvalidFieldType,
@@ -78,8 +78,8 @@ func NewSuspended(fieldName string) error {
 	}
 }
 
-func NewRecordNotfound(fieldName string) error {
-	message := fmt.Sprintf("%s `%s`", messages[ErrRecordNotFound], fieldName)
+func NewErrRecordNotfound(fieldName string) error {
+	message := fmt.Sprintf("%s `%s`", getErrorMessage(ErrRecordNotFound), fieldName)
 	return AppError{
 		Code:     ErrRecordNotFound,
 		Message:  NewErrorMessage(message),
@@ -87,8 +87,8 @@ func NewRecordNotfound(fieldName string) error {
 	}
 }
 
-func NewDuplicatedValue(fieldName string) error {
-	message := fmt.Sprintf("%s `%s` already used.", messages[ErrDuplicatedRecord], fieldName)
+func NewErrDuplicatedValue(fieldName string) error {
+	message := fmt.Sprintf("%s `%s` already used.", getErrorMessage(ErrDuplicatedRecord), fieldName)
 	return AppError{
 		Code:     ErrDuplicatedRecord,
 		Message:  NewErrorMessage(message),
