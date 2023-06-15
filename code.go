@@ -19,12 +19,12 @@ const (
 	ErrDuplicatedRecord  ErrorCode = "V4009"
 	ErrNotMatched        ErrorCode = "V4010"
 	ErrSuspended         ErrorCode = "V5001"
-	ErrorInternalError   ErrorCode = "S5003"
+	ErrInternalError     ErrorCode = "S5003"
 )
 
 var (
 	messages = map[ErrorCode]ErrorMessage{
-		ErrorInternalError:   "internal server error. Please contact admin support",
+		ErrInternalError:     "internal server error. Please contact admin support",
 		ErrRequiredField:     "missing required field",
 		ErrUnauthorized:      "unauthorized",
 		ErrPermissionDenied:  "permission denied",
@@ -39,8 +39,8 @@ var (
 
 func getErrorMessage(code ErrorCode) ErrorMessage {
 	switch code {
-	case ErrorInternalError:
-		return messages[ErrorInternalError]
+	case ErrInternalError:
+		return messages[ErrInternalError]
 	case ErrRequiredField:
 		return messages[ErrRequiredField]
 	case ErrUnauthorized:
@@ -60,6 +60,6 @@ func getErrorMessage(code ErrorCode) ErrorMessage {
 	case ErrNotMatched:
 		return messages[ErrNotMatched]
 	default:
-		return messages[ErrorInternalError]
+		return messages[ErrInternalError]
 	}
 }

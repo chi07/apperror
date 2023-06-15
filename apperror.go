@@ -15,6 +15,15 @@ func (e AppError) Error() string {
 	return string(e.Message)
 }
 
+func NewErrInternalServer(msg string) error {
+	message := fmt.Sprintf("%s `%s`", getErrorMessage(ErrInternalError), msg)
+	return AppError{
+		Code:     ErrInternalError,
+		Message:  NewErrorMessage(message),
+		HttpCode: http.StatusBadRequest,
+	}
+}
+
 func NewErrMissingField(fieldName string) error {
 	message := fmt.Sprintf("%s `%s`", getErrorMessage(ErrRequiredField), fieldName)
 	return AppError{
