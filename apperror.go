@@ -25,7 +25,7 @@ func NewErrInternalServer(msg string) error {
 }
 
 func NewErrUnUnauthorized(msg string) error {
-	message := fmt.Sprintf("%s `%s`", getErrorMessage(ErrInternalError), msg)
+	message := fmt.Sprintf("%s `%s`", getErrorMessage(ErrUnauthorized), msg)
 	return AppError{
 		Code:     ErrUnauthorized,
 		Message:  NewErrorMessage(message),
@@ -33,8 +33,17 @@ func NewErrUnUnauthorized(msg string) error {
 	}
 }
 
+func NewErrNotActivated(field string) error {
+	message := fmt.Sprintf("%s `%s`. Please activate it", getErrorMessage(ErrNotActivated), field)
+	return AppError{
+		Code:     ErrNotActivated,
+		Message:  NewErrorMessage(message),
+		HttpCode: http.StatusForbidden,
+	}
+}
+
 func NewErrStatusForbidden(msg string) error {
-	message := fmt.Sprintf("%s `%s`", getErrorMessage(ErrInternalError), msg)
+	message := fmt.Sprintf("%s `%s`", getErrorMessage(ErrPermissionDenied), msg)
 	return AppError{
 		Code:     ErrPermissionDenied,
 		Message:  NewErrorMessage(message),

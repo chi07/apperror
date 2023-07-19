@@ -20,6 +20,7 @@ const (
 	ErrNotMatched        ErrorCode = "V4010"
 	ErrSuspended         ErrorCode = "V5001"
 	ErrInternalError     ErrorCode = "S5003"
+	ErrNotActivated      ErrorCode = "S4013"
 )
 
 var (
@@ -33,6 +34,7 @@ var (
 		ErrDuplicatedRecord:  "duplicated value field",
 		ErrRecordNotFound:    "not found",
 		ErrSuspended:         "suspend",
+		ErrNotActivated:      "not activated",
 		ErrNotMatched:        "not matched",
 	}
 )
@@ -55,6 +57,8 @@ func getErrorMessage(code ErrorCode) ErrorMessage {
 		return messages[ErrDuplicatedRecord]
 	case ErrSuspended:
 		return messages[ErrSuspended]
+	case ErrNotActivated:
+		return messages[ErrNotActivated]
 	case ErrRecordNotFound:
 		return messages[ErrRecordNotFound]
 	case ErrNotMatched:
