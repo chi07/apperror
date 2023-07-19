@@ -24,6 +24,24 @@ func NewErrInternalServer(msg string) error {
 	}
 }
 
+func NewErrUnUnauthorized(msg string) error {
+	message := fmt.Sprintf("%s `%s`", getErrorMessage(ErrInternalError), msg)
+	return AppError{
+		Code:     ErrUnauthorized,
+		Message:  NewErrorMessage(message),
+		HttpCode: http.StatusUnauthorized,
+	}
+}
+
+func NewErrStatusForbidden(msg string) error {
+	message := fmt.Sprintf("%s `%s`", getErrorMessage(ErrInternalError), msg)
+	return AppError{
+		Code:     ErrPermissionDenied,
+		Message:  NewErrorMessage(message),
+		HttpCode: http.StatusForbidden,
+	}
+}
+
 func NewErrMissingField(fieldName string) error {
 	message := fmt.Sprintf("%s `%s`", getErrorMessage(ErrRequiredField), fieldName)
 	return AppError{
