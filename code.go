@@ -23,21 +23,19 @@ const (
 	ErrNotActivated      ErrorCode = "S4013"
 )
 
-var (
-	messages = map[ErrorCode]ErrorMessage{
-		ErrInternalError:     "internal server error. Please contact admin support",
-		ErrRequiredField:     "missing required field",
-		ErrUnauthorized:      "unauthorized",
-		ErrPermissionDenied:  "permission denied",
-		ErrInvalidFieldValue: "invalid value filed",
-		ErrInvalidFieldType:  "invalid type filed",
-		ErrDuplicatedRecord:  "duplicated value field",
-		ErrRecordNotFound:    "not found",
-		ErrSuspended:         "suspend",
-		ErrNotActivated:      "not activated",
-		ErrNotMatched:        "not matched",
-	}
-)
+var messages = map[ErrorCode]ErrorMessage{
+	ErrInternalError:     "internal server error. Please contact admin support",
+	ErrRequiredField:     "missing required field",
+	ErrUnauthorized:      "unauthorized",
+	ErrPermissionDenied:  "permission denied",
+	ErrInvalidFieldValue: "invalid value filed",
+	ErrInvalidFieldType:  "invalid type filed",
+	ErrDuplicatedRecord:  "duplicated value field",
+	ErrRecordNotFound:    "not found",
+	ErrSuspended:         "suspend",
+	ErrNotActivated:      "not activated",
+	ErrNotMatched:        "not matched",
+}
 
 func getErrorMessage(code ErrorCode) ErrorMessage {
 	switch code {
