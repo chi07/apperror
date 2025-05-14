@@ -7,6 +7,98 @@ import (
 	"github.com/chi07/apperror"
 )
 
+func TestNewErrInternalServerReturnsCorrectError(t *testing.T) {
+	msg := "internal server error"
+	expectedError := apperror.AppError{
+		Code:     apperror.ErrInternalError,
+		Message:  apperror.NewErrorMessage("internal server error. Please contact admin support `internal server error`"),
+		HttpCode: http.StatusBadRequest,
+	}
+
+	err := apperror.NewErrInternalServer(msg)
+
+	if err.Error() != expectedError.Error() {
+		t.Errorf("Expected error message: %s, but got: %s", expectedError.Error(), err.Error())
+	}
+
+	if err.(apperror.AppError).Code != expectedError.Code {
+		t.Errorf("Expected error code: %s, but got: %s", expectedError.Code, err.(apperror.AppError).Code)
+	}
+
+	if err.(apperror.AppError).HttpCode != expectedError.HttpCode {
+		t.Errorf("Expected HTTP code: %d, but got: %d", expectedError.HttpCode, err.(apperror.AppError).HttpCode)
+	}
+}
+
+func TestNewErrUnUnauthorizedReturnsCorrectError(t *testing.T) {
+	msg := "unauthorized access"
+	expectedError := apperror.AppError{
+		Code:     apperror.ErrUnauthorized,
+		Message:  apperror.NewErrorMessage("unauthorized `unauthorized access`"),
+		HttpCode: http.StatusUnauthorized,
+	}
+
+	err := apperror.NewErrUnUnauthorized(msg)
+
+	if err.Error() != expectedError.Error() {
+		t.Errorf("Expected error message: %s, but got: %s", expectedError.Error(), err.Error())
+	}
+
+	if err.(apperror.AppError).Code != expectedError.Code {
+		t.Errorf("Expected error code: %s, but got: %s", expectedError.Code, err.(apperror.AppError).Code)
+	}
+
+	if err.(apperror.AppError).HttpCode != expectedError.HttpCode {
+		t.Errorf("Expected HTTP code: %d, but got: %d", expectedError.HttpCode, err.(apperror.AppError).HttpCode)
+	}
+}
+
+func TestNewErrNotActivatedReturnsCorrectError(t *testing.T) {
+	field := "account"
+	expectedError := apperror.AppError{
+		Code:     apperror.ErrNotActivated,
+		Message:  apperror.NewErrorMessage("not activated `account`. Please activate it"),
+		HttpCode: http.StatusForbidden,
+	}
+
+	err := apperror.NewErrNotActivated(field)
+
+	if err.Error() != expectedError.Error() {
+		t.Errorf("Expected error message: %s, but got: %s", expectedError.Error(), err.Error())
+	}
+
+	if err.(apperror.AppError).Code != expectedError.Code {
+		t.Errorf("Expected error code: %s, but got: %s", expectedError.Code, err.(apperror.AppError).Code)
+	}
+
+	if err.(apperror.AppError).HttpCode != expectedError.HttpCode {
+		t.Errorf("Expected HTTP code: %d, but got: %d", expectedError.HttpCode, err.(apperror.AppError).HttpCode)
+	}
+}
+
+func TestNewErrStatusForbiddenReturnsCorrectError(t *testing.T) {
+	msg := "access denied"
+	expectedError := apperror.AppError{
+		Code:     apperror.ErrPermissionDenied,
+		Message:  apperror.NewErrorMessage("permission denied `access denied`"),
+		HttpCode: http.StatusForbidden,
+	}
+
+	err := apperror.NewErrStatusForbidden(msg)
+
+	if err.Error() != expectedError.Error() {
+		t.Errorf("Expected error message: %s, but got: %s", expectedError.Error(), err.Error())
+	}
+
+	if err.(apperror.AppError).Code != expectedError.Code {
+		t.Errorf("Expected error code: %s, but got: %s", expectedError.Code, err.(apperror.AppError).Code)
+	}
+
+	if err.(apperror.AppError).HttpCode != expectedError.HttpCode {
+		t.Errorf("Expected HTTP code: %d, but got: %d", expectedError.HttpCode, err.(apperror.AppError).HttpCode)
+	}
+}
+
 func TestNewErrMissingField(t *testing.T) {
 	fieldName := "name"
 	expectedError := apperror.AppError{
