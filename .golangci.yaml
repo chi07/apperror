@@ -1,0 +1,16 @@
+version: "2"
+
+run:
+  tests: true
+  issues-exit-code: 1
+  timeout: 5m
+
+linters:
+  enable:
+    - bodyclose
+    - copyloopvar
+    - misspell
+    - whitespace
+
+issues:
+  max-same-issues: 0
