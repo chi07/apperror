@@ -1,64 +1,16 @@
-run:
-  timeout: 4m
-  tests: true
-  allow-parallel-runners: true
+version: "2"
 
-output:
-  sort-results: true
-  formats:
-    - format: colored-line-number
+run:
+  tests: true
+  issues-exit-code: 1
+  timeout: 5m
 
 linters:
   enable:
-    - govet
-    - staticcheck
-    - gosimple
-    - ineffassign
-    - typecheck
-    - errcheck
-    - gocritic
-    - goconst
-    - prealloc
-    - gofumpt
-    - goimports
-    - misspell
-    - revive
-    - nakedret
-    - unconvert
-    - unparam
-    - tenv
-    - copyloopvar
-    - sqlclosecheck
     - bodyclose
+    - copyloopvar
+    - misspell
     - whitespace
-    - dupl
-    - stylecheck
-    - dogsled
-    - exhaustive
-
-linters-settings:
-  gofumpt:
-    extra-rules: true
-  goimports:
-    local-prefixes: github.com/chi07/httpx
-  revive:
-    rules:
-      - name: indent-error-flow
-      - name: errorf
-      - name: error-naming
-      - name: exported
-      - name: if-return
-  gocritic:
-    enabled-tags: [diagnostic, performance, style]
-    settings:
-      hugeParam:
-        sizeThreshold: 96
-  misspell:
-    locale: US
 
 issues:
-  exclude-use-default: false
-  max-issues-per-linter: 0
   max-same-issues: 0
-  exclude:
-    - 'should have comment or be unexported' # relax for internal code

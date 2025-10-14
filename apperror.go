@@ -1,3 +1,4 @@
+// Package apperror package apperror
 package apperror
 
 import (
@@ -75,7 +76,7 @@ func getMessage(code Code) Message {
 type AppError struct {
 	Code     Code    `json:"code"`
 	Message  Message `json:"message"`
-	HttpCode int     `json:"-"`
+	HTTPCode int     `json:"-"`
 	Cause    error   `json:"-"`
 }
 
@@ -84,7 +85,7 @@ func (e *AppError) GetCode() int {
 		return 0
 	}
 
-	return e.HttpCode
+	return e.HTTPCode
 }
 
 func (e *AppError) Error() string {
@@ -142,7 +143,7 @@ func newAppError(code Code, cause error, args ...any) *AppError {
 		return &AppError{
 			Code:     code,
 			Message:  NewMessage(baseStr),
-			HttpCode: sp.status,
+			HTTPCode: sp.status,
 			Cause:    cause,
 		}
 	}
@@ -169,7 +170,7 @@ func newAppError(code Code, cause error, args ...any) *AppError {
 	return &AppError{
 		Code:     code,
 		Message:  NewMessage(msg),
-		HttpCode: sp.status,
+		HTTPCode: sp.status,
 		Cause:    cause,
 	}
 }

@@ -149,8 +149,8 @@ func TestAppErrors_TableDriven(t *testing.T) {
 			if ae.Code != tt.wantCode {
 				t.Fatalf("Code: got %v, want %v", ae.Code, tt.wantCode)
 			}
-			if ae.HttpCode != tt.wantHTTP || ae.GetCode() != tt.wantHTTP {
-				t.Fatalf("HttpCode/GetCode: got (%d,%d), want (%d,%d)", ae.HttpCode, ae.GetCode(), tt.wantHTTP, tt.wantHTTP)
+			if ae.HTTPCode != tt.wantHTTP || ae.GetCode() != tt.wantHTTP {
+				t.Fatalf("HTTPCode/GetCode: got (%d,%d), want (%d,%d)", ae.HTTPCode, ae.GetCode(), tt.wantHTTP, tt.wantHTTP)
 			}
 			mustContainAll(t, ae.Error(), tt.contains...)
 
@@ -173,8 +173,8 @@ func TestInternalServer_WithAndWithoutCause(t *testing.T) {
 	if ae.Code != apperror.ErrInternalError {
 		t.Fatalf("unexpected code: got %v want %v", ae.Code, apperror.ErrInternalError)
 	}
-	if ae.HttpCode != 500 || ae.GetCode() != 500 {
-		t.Fatalf("unexpected http code: got (%d,%d) want 500", ae.HttpCode, ae.GetCode())
+	if ae.HTTPCode != 500 || ae.GetCode() != 500 {
+		t.Fatalf("unexpected http code: got (%d,%d) want 500", ae.HTTPCode, ae.GetCode())
 	}
 	// Error() phải chứa cả message và cause
 	mustContainAll(t, ae.Error(), "processing", "db down")
@@ -190,8 +190,8 @@ func TestInternalServer_WithAndWithoutCause(t *testing.T) {
 	// Without cause
 	err2 := apperror.NewErrInternalServer("panic-free")
 	ae2 := mustAsAppError(t, err2)
-	if ae2.Code != apperror.ErrInternalError || ae2.HttpCode != 500 {
-		t.Fatalf("unexpected (code,http): got (%v,%d)", ae2.Code, ae2.HttpCode)
+	if ae2.Code != apperror.ErrInternalError || ae2.HTTPCode != 500 {
+		t.Fatalf("unexpected (code,http): got (%v,%d)", ae2.Code, ae2.HTTPCode)
 	}
 	mustContainAll(t, ae2.Error(), "panic-free")
 }
