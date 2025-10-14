@@ -1,50 +1,65 @@
 version: "2"
 run:
-  issues-exit-code: 1
+  timeout: 4m
   tests: true
+  allow-parallel-runners: true
+
 output:
+  sort-results: true
   formats:
-    text:
-      path: stdout
-      print-linter-name: true
-      print-issued-lines: true
-  path-prefix: ""
+    - format: colored-line-number
+
 linters:
   enable:
-    - bodyclose
-    - copyloopvar
-    - misspell
-    - whitespace
-  exclusions:
-    generated: lax
-    presets:
-      - common-false-positives
-      - legacy
-      - std-error-handling
-    rules:
-      - linters:
-          - revive
-        path: example_test.go
-        text: seems to be unused
-      - linters:
-          - revive
-        text: package-comments
-    paths:
-      - local
-      - third_party$
-      - builtin$
-      - examples$
-issues:
-  max-same-issues: 100
-  fix: true
-formatters:
-  enable:
+    - govet
+    - staticcheck
+    - gosimple
+    - ineffassign
+    - typecheck
+    - errcheck
+    - gocritic
+    - goconst
+    - prealloc
     - gofumpt
     - goimports
-  exclusions:
-    generated: lax
-    paths:
-      - local
-      - third_party$
-      - builtin$
-      - examples$
+    - misspell
+    - revive
+    - nakedret
+    - unconvert
+    - unparam
+    - tenv
+    - copyloopvar
+    - sqlclosecheck
+    - bodyclose
+    - whitespace
+    - dupl
+    - stylecheck
+    - dogsled
+    - exhaustive
+
+linters-settings:
+  gofumpt:
+    extra-rules: true
+  goimports:
+    local-prefixes: github.com/chi07/httpx
+  revive:
+    rules:
+      - name: indent-error-flow
+      - name: errorf
+      - name: error-naming
+      - name: exported
+      - name: if-return
+  gocritic:
+    enabled-tags: [diagnostic, performance, style]
+    settings:
+      hugeParam:
+        sizeThreshold: 96
+  misspell:
+    locale: US
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude:
+    - 'should have comment or be unexported' # relax for internal code
