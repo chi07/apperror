@@ -1,4 +1,4 @@
-// Package apperror package apperror
+// Package apperror provides structured application error types with HTTP status codes.
 package apperror
 
 import (
@@ -7,14 +7,11 @@ import (
 	"net/http"
 )
 
-type (
-	Code    string
-	Message string
-)
+// Code represents an application-level error code.
+type Code string
 
-func NewMessage(v string) Message {
-	return Message(v)
-}
+// Message represents a human-readable error message.
+type Message string
 
 const (
 	ErrRequiredField     Code = "V4000"
@@ -30,49 +27,28 @@ const (
 	ErrNotActivated      Code = "S4013"
 )
 
-var messages = map[Code]Message{
-	ErrInternalError:     "internal server error. Please contact admin support",
-	ErrRequiredField:     "missing required field",
-	ErrUnauthorized:      "unauthorized",
-	ErrPermissionDenied:  "permission denied",
-	ErrInvalidFieldValue: "invalid value filed",
-	ErrInvalidFieldType:  "invalid type filed",
-	ErrDuplicatedRecord:  "duplicated value field",
-	ErrRecordNotFound:    "not found",
-	ErrSuspended:         "suspend",
-	ErrNotActivated:      "not activated",
-	ErrNotMatched:        "not matched",
+type errorSpec struct {
+	status  int
+	message string
+	tmpl    string
 }
 
-func getMessage(code Code) Message {
-	switch code {
-	case ErrInternalError:
-		return messages[ErrInternalError]
-	case ErrRequiredField:
-		return messages[ErrRequiredField]
-	case ErrUnauthorized:
-		return messages[ErrUnauthorized]
-	case ErrInvalidFieldType:
-		return messages[ErrInvalidFieldType]
-	case ErrPermissionDenied:
-		return messages[ErrPermissionDenied]
-	case ErrInvalidFieldValue:
-		return messages[ErrInvalidFieldValue]
-	case ErrDuplicatedRecord:
-		return messages[ErrDuplicatedRecord]
-	case ErrSuspended:
-		return messages[ErrSuspended]
-	case ErrNotActivated:
-		return messages[ErrNotActivated]
-	case ErrRecordNotFound:
-		return messages[ErrRecordNotFound]
-	case ErrNotMatched:
-		return messages[ErrNotMatched]
-	default:
-		return messages[ErrInternalError]
-	}
+// errorSpecs maps each error code to its HTTP status, base message, and format template.
+var errorSpecs = map[Code]errorSpec{
+	ErrInternalError:     {http.StatusInternalServerError, "internal server error. Please contact admin support", "%s `%s`"},
+	ErrUnauthorized:      {http.StatusUnauthorized, "unauthorized", "%s `%s`"},
+	ErrPermissionDenied:  {http.StatusForbidden, "permission denied", "%s `%s`"},
+	ErrRequiredField:     {http.StatusBadRequest, "missing required field", "%s `%s`"},
+	ErrInvalidFieldValue: {http.StatusBadRequest, "invalid value filed", "%s `%s`"},
+	ErrInvalidFieldType:  {http.StatusBadRequest, "invalid type filed", "%s `%s`"},
+	ErrRecordNotFound:    {http.StatusNotFound, "not found", "%s `%s`"},
+	ErrNotActivated:      {http.StatusForbidden, "not activated", "%s `%s`. Please activate it"},
+	ErrNotMatched:        {http.StatusBadRequest, "not matched", "`%s` and `%s` do not match"},
+	ErrSuspended:         {http.StatusBadRequest, "suspend", "`%s` is suspended"},
+	ErrDuplicatedRecord:  {http.StatusConflict, "duplicated value field", "%s `%s` already used"},
 }
 
+// AppError is a structured error with an error code, message, HTTP status, and optional cause.
 type AppError struct {
 	Code     Code    `json:"code"`
 	Message  Message `json:"message"`
@@ -80,96 +56,53 @@ type AppError struct {
 	Cause    error   `json:"-"`
 }
 
+// GetCode returns the HTTP status code.
 func (e *AppError) GetCode() int {
 	if e == nil {
 		return 0
 	}
-
 	return e.HTTPCode
 }
 
+// Error implements the error interface.
 func (e *AppError) Error() string {
 	if e == nil {
 		return ""
 	}
 	if e.Cause != nil {
-		return fmt.Sprintf("%s: %v", string(e.Message), e.Cause)
+		return fmt.Sprintf("%s: %v", e.Message, e.Cause)
 	}
 	return string(e.Message)
 }
 
+// Unwrap returns the underlying cause for errors.Is/As chaining.
 func (e *AppError) Unwrap() error { return e.Cause }
 
+// Is reports whether target is an AppError with the same Code.
 func (e *AppError) Is(target error) bool {
 	var t *AppError
-	ok := errors.As(target, &t)
-	return ok && e.Code == t.Code
-}
-
-type spec struct {
-	status int
-	tmpl   string // template bổ sung sau getErrorMessage(code)
-}
-
-const (
-	tmplBaseTwoPlaceholders = "%s `%s`"
-)
-
-// Khai báo mapping code -> http status + template bổ sung
-var errorSpec = map[Code]spec{
-	ErrInternalError:     {http.StatusInternalServerError, tmplBaseTwoPlaceholders},
-	ErrUnauthorized:      {http.StatusUnauthorized, tmplBaseTwoPlaceholders},
-	ErrPermissionDenied:  {http.StatusForbidden, tmplBaseTwoPlaceholders},
-	ErrRequiredField:     {http.StatusBadRequest, tmplBaseTwoPlaceholders},
-	ErrInvalidFieldValue: {http.StatusBadRequest, tmplBaseTwoPlaceholders},
-	ErrInvalidFieldType:  {http.StatusBadRequest, tmplBaseTwoPlaceholders},
-	ErrRecordNotFound:    {http.StatusNotFound, tmplBaseTwoPlaceholders},
-
-	ErrNotActivated:     {http.StatusForbidden, "%s `%s`. Please activate it"},
-	ErrNotMatched:       {http.StatusBadRequest, "`%s` and `%s` do not match"},
-	ErrSuspended:        {http.StatusBadRequest, "`%s` is suspended"},
-	ErrDuplicatedRecord: {http.StatusConflict, "%s `%s` already used"},
+	return errors.As(target, &t) && e.Code == t.Code
 }
 
 func newAppError(code Code, cause error, args ...any) *AppError {
-	sp, ok := errorSpec[code]
+	sp, ok := errorSpecs[code]
 	if !ok {
-		sp = spec{status: http.StatusInternalServerError, tmpl: "%s"}
-	}
-
-	baseStr := string(getMessage(code))
-
-	if sp.tmpl == "%s" && len(args) == 0 {
-		return &AppError{
-			Code:     code,
-			Message:  NewMessage(baseStr),
-			HTTPCode: sp.status,
-			Cause:    cause,
-		}
-	}
-
-	var small [8]any
-	n := 0
-	small[n] = baseStr
-	n++
-	for i := 0; i < len(args) && n < len(small); i++ {
-		small[n] = args[i]
-		n++
+		sp = errorSpecs[ErrInternalError]
 	}
 
 	var msg string
-	if len(args) <= len(small)-1 {
-		msg = fmt.Sprintf(sp.tmpl, small[:n]...)
+	if len(args) == 0 {
+		msg = sp.message
 	} else {
 		all := make([]any, 0, len(args)+1)
-		all = append(all, baseStr)
+		all = append(all, sp.message)
 		all = append(all, args...)
 		msg = fmt.Sprintf(sp.tmpl, all...)
 	}
 
 	return &AppError{
 		Code:     code,
-		Message:  NewMessage(msg),
+		Message:  Message(msg),
 		HTTPCode: sp.status,
 		Cause:    cause,
 	}
@@ -179,7 +112,7 @@ func NewErrInternalServer(msg string, causes ...error) error {
 	return newAppError(ErrInternalError, firstErr(causes...), msg)
 }
 
-func NewErrUnauthorized(msg string) error { // fix typo: UnUnauthorized -> Unauthorized
+func NewErrUnauthorized(msg string) error {
 	return newAppError(ErrUnauthorized, nil, msg)
 }
 
@@ -227,6 +160,7 @@ func NewErrDuplicatedValue(field string) error {
 	return newAppError(ErrDuplicatedRecord, nil, field)
 }
 
+// firstErr returns the first non-nil error from the provided list.
 func firstErr(es ...error) error {
 	for _, e := range es {
 		if e != nil {
@@ -236,6 +170,7 @@ func firstErr(es ...error) error {
 	return nil
 }
 
+// AsAppError unwraps err into *AppError. Returns (nil, false) if not an AppError.
 func AsAppError(err error) (*AppError, bool) {
 	var ae *AppError
 	if errors.As(err, &ae) {
