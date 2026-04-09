@@ -210,3 +210,72 @@ func TestAsAppError_NilError(t *testing.T) {
 		t.Fatalf("expected (nil,false) for nil error, got (%v,%v)", ae, ok)
 	}
 }
+
+func TestErrCode_GetHTTPCode(t *testing.T) {
+	err := apperror.NewErrUnauthorized("token")
+	ae := mustAsAppError(t, err)
+
+	if ae.ErrCode() != apperror.ErrUnauthorized {
+		t.Fatalf("ErrCode: got %v, want %v", ae.ErrCode(), apperror.ErrUnauthorized)
+	}
+	if ae.GetHTTPCode() != 401 {
+		t.Fatalf("GetHTTPCode: got %d, want 401", ae.GetHTTPCode())
+	}
+}
+
+func TestNewAppError_Custom(t *testing.T) {
+	cause := errors.New("root cause")
+	err := apperror.NewAppError(422, "C422", "custom error", cause)
+
+	if err.Code != "C422" {
+		t.Fatalf("Code: got %v, want C422", err.Code)
+	}
+	if err.HTTPCode != 422 {
+		t.Fatalf("HTTPCode: got %d, want 422", err.HTTPCode)
+	}
+	if err.Message != "custom error" {
+		t.Fatalf("Message: got %v, want 'custom error'", err.Message)
+	}
+	if !errors.Is(err, cause) {
+		t.Fatal("errors.Is should find the cause")
+	}
+}
+
+func TestWithCause(t *testing.T) {
+	base := apperror.NewErrMissingField("email")
+	ae1 := mustAsAppError(t, base)
+	if ae1.Cause != nil {
+		t.Fatal("base error should not have a cause")
+	}
+
+	cause := errors.New("underlying db error")
+	ae2 := ae1.WithCause(cause)
+
+	if ae2.Cause != cause {
+		t.Fatal("WithCause did not set the cause")
+	}
+	// Original should be unchanged
+	if ae1.Cause != nil {
+		t.Fatal("WithCause mutated the original error")
+	}
+	// Both should have the same code and HTTP status
+	if ae1.Code != ae2.Code || ae1.HTTPCode != ae2.HTTPCode {
+		t.Fatal("WithCause should preserve code and http status")
+	}
+}
+
+func TestGetters_NilSafety(t *testing.T) {
+	var ae *apperror.AppError
+	if ae.ErrCode() != "" {
+		t.Fatalf("ErrCode on nil should return empty, got %v", ae.ErrCode())
+	}
+	if ae.GetHTTPCode() != 0 {
+		t.Fatalf("GetHTTPCode on nil should return 0, got %d", ae.GetHTTPCode())
+	}
+	if ae.GetCode() != 0 {
+		t.Fatalf("GetCode on nil should return 0, got %d", ae.GetCode())
+	}
+	if ae.Error() != "" {
+		t.Fatalf("Error on nil should return empty string, got %q", ae.Error())
+	}
+}

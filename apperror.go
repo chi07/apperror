@@ -42,9 +42,9 @@ var errorSpecs = map[Code]errorSpec{
 	ErrInvalidFieldValue: {http.StatusBadRequest, "invalid value filed", "%s `%s`"},
 	ErrInvalidFieldType:  {http.StatusBadRequest, "invalid type filed", "%s `%s`"},
 	ErrRecordNotFound:    {http.StatusNotFound, "not found", "%s `%s`"},
-	ErrNotActivated:      {http.StatusForbidden, "not activated", "%s `%s`. Please activate it"},
+	ErrNotActivated:      {http.StatusForbidden, "not activated", "`%s` is not activated. Please activate it"},
 	ErrNotMatched:        {http.StatusBadRequest, "not matched", "`%s` and `%s` do not match"},
-	ErrSuspended:         {http.StatusBadRequest, "suspend", "`%s` is suspended"},
+	ErrSuspended:         {http.StatusBadRequest, "suspended", "`%s` is suspended"},
 	ErrDuplicatedRecord:  {http.StatusConflict, "duplicated value field", "%s `%s` already used"},
 }
 
@@ -54,6 +54,22 @@ type AppError struct {
 	Message  Message `json:"message"`
 	HTTPCode int     `json:"-"`
 	Cause    error   `json:"-"`
+}
+
+// GetCode returns the error code.
+func (e *AppError) ErrCode() Code {
+	if e == nil {
+		return ""
+	}
+	return e.Code
+}
+
+// GetHTTPCode returns the HTTP status code.
+func (e *AppError) GetHTTPCode() int {
+	if e == nil {
+		return 0
+	}
+	return e.HTTPCode
 }
 
 // GetCode returns the HTTP status code.
@@ -177,4 +193,26 @@ func AsAppError(err error) (*AppError, bool) {
 		return ae, true
 	}
 	return nil, false
+}
+
+// NewAppError creates a custom AppError with the given HTTP status, code, and message.
+// Useful for callers who need error codes not covered by the built-in constructors.
+func NewAppError(httpCode int, code Code, message string, cause ...error) *AppError {
+	return &AppError{
+		Code:     code,
+		Message:  Message(message),
+		HTTPCode: httpCode,
+		Cause:    firstErr(cause...),
+	}
+}
+
+// WithCause returns a new AppError with the given cause attached.
+// The original error is not modified.
+func (e *AppError) WithCause(cause error) *AppError {
+	if e == nil {
+		return nil
+	}
+	newErr := *e
+	newErr.Cause = cause
+	return &newErr
 }
