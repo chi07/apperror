@@ -30,92 +30,21 @@ const (
 type errorSpec struct {
 	status  int
 	message string
-	format  func(args ...any) string
-	format1 func(string) string
-	format2 func(string, string) string
 }
 
-// errorSpecs maps each error code to its HTTP status, base message, and format template.
-// Templates are self-contained: args are passed directly without prepending sp.message.
-var errorSpecs = map[Code]errorSpec{
-	ErrInternalError: {
-		status:  http.StatusInternalServerError,
-		message: "internal server error. Please contact admin support",
-		format1: func(v string) string {
-			return "internal server error. Please contact admin support `" + v + "`"
-		},
-	},
-	ErrUnauthorized: {
-		status:  http.StatusUnauthorized,
-		message: "unauthorized",
-		format1: func(v string) string {
-			return "unauthorized `" + v + "`"
-		},
-	},
-	ErrPermissionDenied: {
-		status:  http.StatusForbidden,
-		message: "permission denied",
-		format1: func(v string) string {
-			return "permission denied `" + v + "`"
-		},
-	},
-	ErrRequiredField: {
-		status:  http.StatusBadRequest,
-		message: "missing required field",
-		format1: func(v string) string {
-			return "missing required field `" + v + "`"
-		},
-	},
-	ErrInvalidFieldValue: {
-		status:  http.StatusBadRequest,
-		message: "invalid value filed",
-		format1: func(v string) string {
-			return "invalid value filed `" + v + "`"
-		},
-	},
-	ErrInvalidFieldType: {
-		status:  http.StatusBadRequest,
-		message: "invalid type filed",
-		format1: func(v string) string {
-			return "invalid type filed `" + v + "`"
-		},
-	},
-	ErrRecordNotFound: {
-		status:  http.StatusNotFound,
-		message: "not found",
-		format1: func(v string) string {
-			return "not found `" + v + "`"
-		},
-	},
-	ErrNotActivated: {
-		status:  http.StatusForbidden,
-		message: "not activated",
-		format1: func(v string) string {
-			return "`" + v + "` is not activated. Please activate it"
-		},
-	},
-	ErrNotMatched: {
-		status:  http.StatusBadRequest,
-		message: "not matched",
-		format2: func(v1, v2 string) string {
-			return "`" + v1 + "` and `" + v2 + "` do not match"
-		},
-	},
-	ErrSuspended: {
-		status:  http.StatusBadRequest,
-		message: "suspended",
-		format1: func(v string) string {
-			return "`" + v + "` is suspended"
-		},
-	},
-	ErrDuplicatedRecord: {
-		status:  http.StatusConflict,
-		message: "duplicated value field",
-		format1: func(v string) string {
-			return "duplicated value field `" + v + "` already used"
-		},
-	},
-}
+var (
+	specInternalError     = errorSpec{status: http.StatusInternalServerError, message: "internal server error. Please contact admin support"}
+	specUnauthorized      = errorSpec{status: http.StatusUnauthorized, message: "unauthorized"}
+	specPermissionDenied  = errorSpec{status: http.StatusForbidden, message: "permission denied"}
+	specRequiredField     = errorSpec{status: http.StatusBadRequest, message: "missing required field"}
+	specInvalidFieldValue = errorSpec{status: http.StatusBadRequest, message: "invalid value filed"}
+	specInvalidFieldType  = errorSpec{status: http.StatusBadRequest, message: "invalid type filed"}
+	specRecordNotFound    = errorSpec{status: http.StatusNotFound, message: "not found"}
+	specDuplicatedRecord  = errorSpec{status: http.StatusConflict, message: "duplicated value field"}
+	specNotMatched        = errorSpec{status: http.StatusBadRequest, message: "not matched"}
+	specSuspended         = errorSpec{status: http.StatusBadRequest, message: "suspended"}
+	specNotActivated      = errorSpec{status: http.StatusForbidden, message: "not activated"}
+)
 
 // AppError is a structured error with an error code, message, HTTP status, and optional cause.
 type AppError struct {
@@ -167,106 +96,116 @@ func (e *AppError) Is(target error) bool {
 	return errors.As(target, &t) && e.Code == t.Code
 }
 
-func newAppError(code Code, cause error, args ...any) *AppError {
-	sp, ok := errorSpecs[code]
-	if !ok {
-		code = ErrInternalError
-		sp = errorSpecs[ErrInternalError]
-	}
-
+func newAppError1(code Code, cause error, sp errorSpec, arg string) *AppError {
 	return &AppError{
 		Code:     code,
-		Message:  Message(formatMessage(sp, args...)),
+		Message:  Message(formatMessage1(code, arg)),
+		HTTPCode: sp.status,
+		Cause:    cause,
+	}
+}
+
+func newAppError2(code Code, cause error, sp errorSpec, arg1, arg2 string) *AppError {
+	return &AppError{
+		Code:     code,
+		Message:  Message(formatMessage2(code, arg1, arg2)),
 		HTTPCode: sp.status,
 		Cause:    cause,
 	}
 }
 
 func NewErrInternalServer(msg string, causes ...error) error {
-	return newAppError(ErrInternalError, firstErr(causes...), msg)
+	return newAppError1(ErrInternalError, firstErr(causes...), specInternalError, msg)
 }
 
 func NewErrUnauthorized(msg string) error {
-	return newAppError(ErrUnauthorized, nil, msg)
+	return newAppError1(ErrUnauthorized, nil, specUnauthorized, msg)
 }
 
 func NewErrNotActivated(field string) error {
-	return newAppError(ErrNotActivated, nil, field)
+	return newAppError1(ErrNotActivated, nil, specNotActivated, field)
 }
 
 func NewErrStatusForbidden(msg string) error {
-	return newAppError(ErrPermissionDenied, nil, msg)
+	return newAppError1(ErrPermissionDenied, nil, specPermissionDenied, msg)
 }
 
 func NewErrMissingField(fieldName string) error {
-	return newAppError(ErrRequiredField, nil, fieldName)
+	return newAppError1(ErrRequiredField, nil, specRequiredField, fieldName)
 }
 
 func NewErrInvalidValue(fieldName string) error {
-	return newAppError(ErrInvalidFieldValue, nil, fieldName)
+	return newAppError1(ErrInvalidFieldValue, nil, specInvalidFieldValue, fieldName)
 }
 
 func NewErrInvalidMinValue(fieldName string, val int) error {
-	sp := errorSpecs[ErrInvalidFieldValue]
 	return &AppError{
 		Code:     ErrInvalidFieldValue,
 		Message:  Message("invalid value filed `" + fieldName + ". It should be ≥ " + strconv.Itoa(val) + "`"),
-		HTTPCode: sp.status,
+		HTTPCode: specInvalidFieldValue.status,
 	}
 }
 
 func NewErrInvalidMaxValue(fieldName string, val int) error {
-	sp := errorSpecs[ErrInvalidFieldValue]
 	return &AppError{
 		Code:     ErrInvalidFieldValue,
 		Message:  Message("invalid value filed `" + fieldName + ". It should be ≤ " + strconv.Itoa(val) + "`"),
-		HTTPCode: sp.status,
+		HTTPCode: specInvalidFieldValue.status,
 	}
 }
 
 func NewErrInvalidType(fieldName string) error {
-	return newAppError(ErrInvalidFieldType, nil, fieldName)
+	return newAppError1(ErrInvalidFieldType, nil, specInvalidFieldType, fieldName)
 }
 
 func NewErrNotMatched(field1, field2 string) error {
-	return newAppError(ErrNotMatched, nil, field1, field2)
+	return newAppError2(ErrNotMatched, nil, specNotMatched, field1, field2)
 }
 
 func NewErrSuspended(field string) error {
-	return newAppError(ErrSuspended, nil, field)
+	return newAppError1(ErrSuspended, nil, specSuspended, field)
 }
 
 func NewErrRecordNotfound(field string) error {
-	return newAppError(ErrRecordNotFound, nil, field)
+	return newAppError1(ErrRecordNotFound, nil, specRecordNotFound, field)
 }
 
 func NewErrDuplicatedValue(field string) error {
-	return newAppError(ErrDuplicatedRecord, nil, field)
+	return newAppError1(ErrDuplicatedRecord, nil, specDuplicatedRecord, field)
 }
 
-func formatMessage(sp errorSpec, args ...any) string {
-	switch len(args) {
-	case 0:
-		return sp.message
-	case 1:
-		if sp.format1 != nil {
-			if v, ok := args[0].(string); ok {
-				return sp.format1(v)
-			}
-		}
-	case 2:
-		if sp.format2 != nil {
-			v1, ok1 := args[0].(string)
-			v2, ok2 := args[1].(string)
-			if ok1 && ok2 {
-				return sp.format2(v1, v2)
-			}
-		}
+func formatMessage1(code Code, arg string) string {
+	switch code {
+	case ErrInternalError:
+		return "internal server error. Please contact admin support `" + arg + "`"
+	case ErrUnauthorized:
+		return "unauthorized `" + arg + "`"
+	case ErrPermissionDenied:
+		return "permission denied `" + arg + "`"
+	case ErrRequiredField:
+		return "missing required field `" + arg + "`"
+	case ErrInvalidFieldValue:
+		return "invalid value filed `" + arg + "`"
+	case ErrInvalidFieldType:
+		return "invalid type filed `" + arg + "`"
+	case ErrRecordNotFound:
+		return "not found `" + arg + "`"
+	case ErrNotActivated:
+		return "`" + arg + "` is not activated. Please activate it"
+	case ErrSuspended:
+		return "`" + arg + "` is suspended"
+	case ErrDuplicatedRecord:
+		return "duplicated value field `" + arg + "` already used"
+	default:
+		return specInternalError.message
 	}
-	if sp.format != nil {
-		return sp.format(args...)
+}
+
+func formatMessage2(code Code, arg1, arg2 string) string {
+	if code == ErrNotMatched {
+		return "`" + arg1 + "` and `" + arg2 + "` do not match"
 	}
-	return sp.message
+	return formatMessage1(code, arg1)
 }
 
 // firstErr returns the first non-nil error from the provided list.
