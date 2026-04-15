@@ -1,16 +1,14 @@
-GO_BINARY_NAME=apperror
-
-export
+.PHONY: install lint test coverage test-report
 
 install:
-	npm update -g
-	npm i -g husky
-	go install github.com/joho/godotenv/cmd/godotenv@latest
 	go mod tidy
 
-ci.lint:
-	@echo "== 🙆 ci.linter =="
+lint:
+	@echo "== 🙆 linter =="
 	golangci-lint run -v ./... --fix
+
+test:
+	go test ./... -race
 
 test-report:
 	go test ./... -coverprofile coverage.out
