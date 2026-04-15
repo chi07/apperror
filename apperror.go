@@ -3,8 +3,8 @@ package apperror
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
+	"strconv"
 )
 
 // Code represents an application-level error code.
@@ -30,23 +30,91 @@ const (
 type errorSpec struct {
 	status  int
 	message string
-	tmpl    string
+	format  func(args ...any) string
+	format1 func(string) string
+	format2 func(string, string) string
 }
 
 // errorSpecs maps each error code to its HTTP status, base message, and format template.
 // Templates are self-contained: args are passed directly without prepending sp.message.
 var errorSpecs = map[Code]errorSpec{
-	ErrInternalError:     {http.StatusInternalServerError, "internal server error. Please contact admin support", "internal server error. Please contact admin support `%s`"},
-	ErrUnauthorized:      {http.StatusUnauthorized, "unauthorized", "unauthorized `%s`"},
-	ErrPermissionDenied:  {http.StatusForbidden, "permission denied", "permission denied `%s`"},
-	ErrRequiredField:     {http.StatusBadRequest, "missing required field", "missing required field `%s`"},
-	ErrInvalidFieldValue: {http.StatusBadRequest, "invalid value filed", "invalid value filed `%s`"},
-	ErrInvalidFieldType:  {http.StatusBadRequest, "invalid type filed", "invalid type filed `%s`"},
-	ErrRecordNotFound:    {http.StatusNotFound, "not found", "not found `%s`"},
-	ErrNotActivated:      {http.StatusForbidden, "not activated", "`%s` is not activated. Please activate it"},
-	ErrNotMatched:        {http.StatusBadRequest, "not matched", "`%s` and `%s` do not match"},
-	ErrSuspended:         {http.StatusBadRequest, "suspended", "`%s` is suspended"},
-	ErrDuplicatedRecord:  {http.StatusConflict, "duplicated value field", "duplicated value field `%s` already used"},
+	ErrInternalError: {
+		status:  http.StatusInternalServerError,
+		message: "internal server error. Please contact admin support",
+		format1: func(v string) string {
+			return "internal server error. Please contact admin support `" + v + "`"
+		},
+	},
+	ErrUnauthorized: {
+		status:  http.StatusUnauthorized,
+		message: "unauthorized",
+		format1: func(v string) string {
+			return "unauthorized `" + v + "`"
+		},
+	},
+	ErrPermissionDenied: {
+		status:  http.StatusForbidden,
+		message: "permission denied",
+		format1: func(v string) string {
+			return "permission denied `" + v + "`"
+		},
+	},
+	ErrRequiredField: {
+		status:  http.StatusBadRequest,
+		message: "missing required field",
+		format1: func(v string) string {
+			return "missing required field `" + v + "`"
+		},
+	},
+	ErrInvalidFieldValue: {
+		status:  http.StatusBadRequest,
+		message: "invalid value filed",
+		format1: func(v string) string {
+			return "invalid value filed `" + v + "`"
+		},
+	},
+	ErrInvalidFieldType: {
+		status:  http.StatusBadRequest,
+		message: "invalid type filed",
+		format1: func(v string) string {
+			return "invalid type filed `" + v + "`"
+		},
+	},
+	ErrRecordNotFound: {
+		status:  http.StatusNotFound,
+		message: "not found",
+		format1: func(v string) string {
+			return "not found `" + v + "`"
+		},
+	},
+	ErrNotActivated: {
+		status:  http.StatusForbidden,
+		message: "not activated",
+		format1: func(v string) string {
+			return "`" + v + "` is not activated. Please activate it"
+		},
+	},
+	ErrNotMatched: {
+		status:  http.StatusBadRequest,
+		message: "not matched",
+		format2: func(v1, v2 string) string {
+			return "`" + v1 + "` and `" + v2 + "` do not match"
+		},
+	},
+	ErrSuspended: {
+		status:  http.StatusBadRequest,
+		message: "suspended",
+		format1: func(v string) string {
+			return "`" + v + "` is suspended"
+		},
+	},
+	ErrDuplicatedRecord: {
+		status:  http.StatusConflict,
+		message: "duplicated value field",
+		format1: func(v string) string {
+			return "duplicated value field `" + v + "` already used"
+		},
+	},
 }
 
 // AppError is a structured error with an error code, message, HTTP status, and optional cause.
@@ -85,7 +153,7 @@ func (e *AppError) Error() string {
 		return ""
 	}
 	if e.Cause != nil {
-		return fmt.Sprintf("%s: %v", e.Message, e.Cause)
+		return string(e.Message) + ": " + e.Cause.Error()
 	}
 	return string(e.Message)
 }
@@ -102,19 +170,13 @@ func (e *AppError) Is(target error) bool {
 func newAppError(code Code, cause error, args ...any) *AppError {
 	sp, ok := errorSpecs[code]
 	if !ok {
+		code = ErrInternalError
 		sp = errorSpecs[ErrInternalError]
-	}
-
-	var msg string
-	if len(args) == 0 {
-		msg = sp.message
-	} else {
-		msg = fmt.Sprintf(sp.tmpl, args...)
 	}
 
 	return &AppError{
 		Code:     code,
-		Message:  Message(msg),
+		Message:  Message(formatMessage(sp, args...)),
 		HTTPCode: sp.status,
 		Cause:    cause,
 	}
@@ -148,7 +210,7 @@ func NewErrInvalidMinValue(fieldName string, val int) error {
 	sp := errorSpecs[ErrInvalidFieldValue]
 	return &AppError{
 		Code:     ErrInvalidFieldValue,
-		Message:  Message(fmt.Sprintf("invalid value filed `%s. It should be ≥ %d`", fieldName, val)),
+		Message:  Message("invalid value filed `" + fieldName + ". It should be ≥ " + strconv.Itoa(val) + "`"),
 		HTTPCode: sp.status,
 	}
 }
@@ -157,7 +219,7 @@ func NewErrInvalidMaxValue(fieldName string, val int) error {
 	sp := errorSpecs[ErrInvalidFieldValue]
 	return &AppError{
 		Code:     ErrInvalidFieldValue,
-		Message:  Message(fmt.Sprintf("invalid value filed `%s. It should be ≤ %d`", fieldName, val)),
+		Message:  Message("invalid value filed `" + fieldName + ". It should be ≤ " + strconv.Itoa(val) + "`"),
 		HTTPCode: sp.status,
 	}
 }
@@ -180,6 +242,31 @@ func NewErrRecordNotfound(field string) error {
 
 func NewErrDuplicatedValue(field string) error {
 	return newAppError(ErrDuplicatedRecord, nil, field)
+}
+
+func formatMessage(sp errorSpec, args ...any) string {
+	switch len(args) {
+	case 0:
+		return sp.message
+	case 1:
+		if sp.format1 != nil {
+			if v, ok := args[0].(string); ok {
+				return sp.format1(v)
+			}
+		}
+	case 2:
+		if sp.format2 != nil {
+			v1, ok1 := args[0].(string)
+			v2, ok2 := args[1].(string)
+			if ok1 && ok2 {
+				return sp.format2(v1, v2)
+			}
+		}
+	}
+	if sp.format != nil {
+		return sp.format(args...)
+	}
+	return sp.message
 }
 
 // firstErr returns the first non-nil error from the provided list.

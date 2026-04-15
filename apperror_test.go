@@ -279,3 +279,33 @@ func TestGetters_NilSafety(t *testing.T) {
 		t.Fatalf("Error on nil should return empty string, got %q", ae.Error())
 	}
 }
+
+func BenchmarkNewErrMissingField(b *testing.B) {
+	for b.Loop() {
+		_ = apperror.NewErrMissingField("email")
+	}
+}
+
+func BenchmarkNewErrNotMatched(b *testing.B) {
+	for b.Loop() {
+		_ = apperror.NewErrNotMatched("password", "confirm_password")
+	}
+}
+
+func BenchmarkAppErrorErrorWithoutCause(b *testing.B) {
+	err := apperror.NewErrMissingField("email")
+	b.ResetTimer()
+
+	for b.Loop() {
+		_ = err.Error()
+	}
+}
+
+func BenchmarkAppErrorErrorWithCause(b *testing.B) {
+	err := apperror.NewErrInternalServer("processing", errors.New("db down"))
+	b.ResetTimer()
+
+	for b.Loop() {
+		_ = err.Error()
+	}
+}
