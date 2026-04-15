@@ -34,18 +34,19 @@ type errorSpec struct {
 }
 
 // errorSpecs maps each error code to its HTTP status, base message, and format template.
+// Templates are self-contained: args are passed directly without prepending sp.message.
 var errorSpecs = map[Code]errorSpec{
-	ErrInternalError:     {http.StatusInternalServerError, "internal server error. Please contact admin support", "%s `%s`"},
-	ErrUnauthorized:      {http.StatusUnauthorized, "unauthorized", "%s `%s`"},
-	ErrPermissionDenied:  {http.StatusForbidden, "permission denied", "%s `%s`"},
-	ErrRequiredField:     {http.StatusBadRequest, "missing required field", "%s `%s`"},
-	ErrInvalidFieldValue: {http.StatusBadRequest, "invalid value filed", "%s `%s`"},
-	ErrInvalidFieldType:  {http.StatusBadRequest, "invalid type filed", "%s `%s`"},
-	ErrRecordNotFound:    {http.StatusNotFound, "not found", "%s `%s`"},
+	ErrInternalError:     {http.StatusInternalServerError, "internal server error. Please contact admin support", "internal server error. Please contact admin support `%s`"},
+	ErrUnauthorized:      {http.StatusUnauthorized, "unauthorized", "unauthorized `%s`"},
+	ErrPermissionDenied:  {http.StatusForbidden, "permission denied", "permission denied `%s`"},
+	ErrRequiredField:     {http.StatusBadRequest, "missing required field", "missing required field `%s`"},
+	ErrInvalidFieldValue: {http.StatusBadRequest, "invalid value filed", "invalid value filed `%s`"},
+	ErrInvalidFieldType:  {http.StatusBadRequest, "invalid type filed", "invalid type filed `%s`"},
+	ErrRecordNotFound:    {http.StatusNotFound, "not found", "not found `%s`"},
 	ErrNotActivated:      {http.StatusForbidden, "not activated", "`%s` is not activated. Please activate it"},
 	ErrNotMatched:        {http.StatusBadRequest, "not matched", "`%s` and `%s` do not match"},
 	ErrSuspended:         {http.StatusBadRequest, "suspended", "`%s` is suspended"},
-	ErrDuplicatedRecord:  {http.StatusConflict, "duplicated value field", "%s `%s` already used"},
+	ErrDuplicatedRecord:  {http.StatusConflict, "duplicated value field", "duplicated value field `%s` already used"},
 }
 
 // AppError is a structured error with an error code, message, HTTP status, and optional cause.
@@ -56,7 +57,7 @@ type AppError struct {
 	Cause    error   `json:"-"`
 }
 
-// GetCode returns the error code.
+// ErrCode returns the error code.
 func (e *AppError) ErrCode() Code {
 	if e == nil {
 		return ""
@@ -73,11 +74,9 @@ func (e *AppError) GetHTTPCode() int {
 }
 
 // GetCode returns the HTTP status code.
+// Deprecated: use GetHTTPCode instead.
 func (e *AppError) GetCode() int {
-	if e == nil {
-		return 0
-	}
-	return e.HTTPCode
+	return e.GetHTTPCode()
 }
 
 // Error implements the error interface.
@@ -110,10 +109,7 @@ func newAppError(code Code, cause error, args ...any) *AppError {
 	if len(args) == 0 {
 		msg = sp.message
 	} else {
-		all := make([]any, 0, len(args)+1)
-		all = append(all, sp.message)
-		all = append(all, args...)
-		msg = fmt.Sprintf(sp.tmpl, all...)
+		msg = fmt.Sprintf(sp.tmpl, args...)
 	}
 
 	return &AppError{
@@ -149,11 +145,21 @@ func NewErrInvalidValue(fieldName string) error {
 }
 
 func NewErrInvalidMinValue(fieldName string, val int) error {
-	return newAppError(ErrInvalidFieldValue, nil, fmt.Sprintf("%s. It should be ≥ %d", fieldName, val))
+	sp := errorSpecs[ErrInvalidFieldValue]
+	return &AppError{
+		Code:     ErrInvalidFieldValue,
+		Message:  Message(fmt.Sprintf("invalid value filed `%s. It should be ≥ %d`", fieldName, val)),
+		HTTPCode: sp.status,
+	}
 }
 
 func NewErrInvalidMaxValue(fieldName string, val int) error {
-	return newAppError(ErrInvalidFieldValue, nil, fmt.Sprintf("%s. It should be ≤ %d", fieldName, val))
+	sp := errorSpecs[ErrInvalidFieldValue]
+	return &AppError{
+		Code:     ErrInvalidFieldValue,
+		Message:  Message(fmt.Sprintf("invalid value filed `%s. It should be ≤ %d`", fieldName, val)),
+		HTTPCode: sp.status,
+	}
 }
 
 func NewErrInvalidType(fieldName string) error {
